@@ -1,0 +1,46 @@
+; プログラムは文とwhileループの任意個の繰り返し
+program = lwsp *( ( statement / while ) lwsp )
+
+; whileループは `while (<基準変数>) {...}`
+; ループの中身は文とwhileループの任意個の繰り返し
+while = %s"while" lwsp "(" lwsp variable lwsp ")" lwsp "{" lwsp
+        *( ( statement / while ) lwsp )
+        "}"
+
+; 文は代入文、出力関数の呼び出し文または空文
+statement = assign_statement / put lwsp terminator / terminator
+
+; 代入文には単純代入と複合代入(加算、減算のみ)がある
+assign_statement = ( assignment / compound_assignment ) lwsp terminator
+assignment = lvalue lwsp "=" lwsp rvalue
+compound_assignment = lvalue lwsp "+=" lwsp rvalue /
+                       lvalue lwsp "-=" lwsp rvalue
+
+; 代入文の左辺値と右辺値
+lvalue = variable / head
+rvalue = number / get
+
+; 入出力関数
+put = %s"put" lwsp "(" lwsp variable lwsp ")"
+get = %s"get" lwsp "(" lwsp ")"
+
+; 変数および動的変数選択用のメタ変数(ヘッド)
+variable = static_variable / dynamic_variable
+static_variable = var_prefix number
+dynamic_variable = var_prefix head
+var_prefix = %s"v"
+head = %s"head"
+
+; 数
+number = decimal_number / hexadecimal_number
+decimal_number = *digit
+hexadecimal_number = "0x" *hex_digit
+hex_digit = digit / "A" / "B" / "C" / "D" / "E" / "F"
+digit = %x30-39
+
+; 文の終端(区切り文字)
+terminator = ";" / nl
+
+; 空白類
+lwsp = *( %x20 / %x09 / nl )
+nl = %x0A / %x0D
