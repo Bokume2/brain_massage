@@ -33,8 +33,8 @@ head = %s"head"
 
 ; 数
 number = decimal_number / hexadecimal_number
-decimal_number = *digit
-hexadecimal_number = "0x" *hex_digit
+decimal_number = 1*digit
+hexadecimal_number = "0x" 1*hex_digit
 hex_digit = digit / "A" / "B" / "C" / "D" / "E" / "F"
 digit = %x30-39
 
