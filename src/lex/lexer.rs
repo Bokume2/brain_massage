@@ -47,6 +47,8 @@ impl Lexer {
         let number_re = Regex::new(number_ptn).unwrap();
         let static_variable_re = Regex::new(static_variable_ptn).unwrap();
         let dynamic_variable_re = Regex::new(dynamic_variable_ptn).unwrap();
+        
+        let delimiter_re = Regex::new(r"[ \t\r\n;\(\)\{\}]+").unwrap();
 
         let mut result = Vec::new();
         let mut cur: usize = 0;
@@ -94,8 +96,7 @@ impl Lexer {
             } else if let Some(_) = Self::cut_token(&dynamic_variable_re, code, &mut cur) {
                 result.push(Token::Variable(VariableToken::Dynamic));
             } else {
-                let lwsp_re = Regex::new(r"[ \t\n]+").unwrap();
-                let token_like = lwsp_re.splitn(&code[cur..], 2).next().unwrap();
+                let token_like = delimiter_re.splitn(&code[cur..], 2).next().unwrap();
                 let message = format!("Unknown token \"{}\"", token_like);
                 bail!(message);
             }
