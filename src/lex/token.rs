@@ -1,3 +1,4 @@
+#[derive(Debug, PartialEq)]
 pub enum Token {
     Number { value: usize },
     Variable(VariableToken),
@@ -12,22 +13,26 @@ pub enum Token {
     NewLine,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum VariableToken {
     Static { index: usize },
     Dynamic,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum AssginToken {
     Simple,
     Add,
     Sub,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum BracketToken {
     Open,
     Close,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum CurlyBracketToken {
     Open,
     Close,
