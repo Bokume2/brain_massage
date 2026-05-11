@@ -176,7 +176,7 @@ impl Lexer {
 
 #[cfg(test)]
 mod test {
-    use crate::lex::{AssginToken, BracketToken, CurlyBracketToken, Lexer, Token, VariableToken};
+    use super::*;
     use anyhow::Error;
 
     #[test]
