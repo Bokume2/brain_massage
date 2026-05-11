@@ -105,9 +105,8 @@ impl Lexer {
     }
 
     fn cut_token<'a>(re: &Regex, code: &'a str, cur: &mut usize) -> Option<&'a str> {
-        if let Some(m) = re.find_at(code, *cur)
-            && m.start() == *cur
-        {
+        let m = re.find_at(code, *cur)?;
+        if m.start() == *cur {
             let token_str = m.as_str();
             *cur += token_str.len();
             return Some(token_str);
