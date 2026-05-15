@@ -100,19 +100,19 @@ impl Lexer {
         let mut result = Vec::new();
         let mut cur: usize = 0;
         while cur < code.len() {
-            if let Some(_) = Self::cut_token(wsp_re, code, &mut cur) {
+            if Self::cut_token(wsp_re, code, &mut cur).is_some() {
                 // nothing to do
-            } else if let Some(_) = Self::cut_token(newline_re, code, &mut cur) {
+            } else if Self::cut_token(newline_re, code, &mut cur).is_some() {
                 result.push(Token::NewLine);
-            } else if let Some(_) = Self::cut_token(semicolon_re, code, &mut cur) {
+            } else if Self::cut_token(semicolon_re, code, &mut cur).is_some() {
                 result.push(Token::Semicolon);
-            } else if let Some(_) = Self::cut_token(put_re, code, &mut cur) {
+            } else if Self::cut_token(put_re, code, &mut cur).is_some() {
                 result.push(Token::Put);
-            } else if let Some(_) = Self::cut_token(get_re, code, &mut cur) {
+            } else if Self::cut_token(get_re, code, &mut cur).is_some() {
                 result.push(Token::Get)
-            } else if let Some(_) = Self::cut_token(while_re, code, &mut cur) {
+            } else if Self::cut_token(while_re, code, &mut cur).is_some() {
                 result.push(Token::While);
-            } else if let Some(_) = Self::cut_token(head_re, code, &mut cur) {
+            } else if Self::cut_token(head_re, code, &mut cur).is_some() {
                 result.push(Token::Head);
             } else if let Some(bracket_str) = Self::cut_token(bracket_re, code, &mut cur) {
                 result.push(Token::Bracket(match bracket_str {
@@ -140,7 +140,7 @@ impl Lexer {
             } else if let Some(stat_var_str) = Self::cut_token(static_variable_re, code, &mut cur) {
                 let index = Self::parse_number(&stat_var_str[VAR_PREFIX.len()..]);
                 result.push(Token::Variable(VariableToken::Static { index }));
-            } else if let Some(_) = Self::cut_token(dynamic_variable_re, code, &mut cur) {
+            } else if Self::cut_token(dynamic_variable_re, code, &mut cur).is_some() {
                 result.push(Token::Variable(VariableToken::Dynamic));
             } else {
                 let token_like = delimiter_re.splitn(&code[cur..], 2).next().unwrap();
@@ -156,9 +156,9 @@ impl Lexer {
         if m.start() == *cur {
             let token_str = m.as_str();
             *cur += token_str.len();
-            return Some(token_str);
+            Some(token_str)
         } else {
-            return None;
+            None
         }
     }
 
@@ -166,11 +166,17 @@ impl Lexer {
         if num_str.starts_with("0x") || num_str.starts_with("0X") {
             return usize::from_str_radix(&num_str[2..], 16).unwrap();
         }
-        return num_str.parse::<usize>().unwrap();
+        num_str.parse::<usize>().unwrap()
     }
 
     pub fn new() -> Lexer {
         Lexer
+    }
+}
+
+impl Default for Lexer {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
