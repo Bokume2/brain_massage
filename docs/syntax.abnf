@@ -26,10 +26,11 @@ get = %s"get" lwsp "(" lwsp ")"
 
 ; 変数および動的変数選択用のメタ変数(ヘッド)
 variable = static_variable / dynamic_variable
-static_variable = var_prefix number
-dynamic_variable = var_prefix head
+static_variable = var_prefix number | tape "[" number "]"
+dynamic_variable = var_prefix head | tape "[" head "]"
 var_prefix = %s"v"
 head = %s"head"
+tape = %s"tape"
 
 ; 数
 number = decimal_number / hexadecimal_number

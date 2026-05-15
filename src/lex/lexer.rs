@@ -9,6 +9,7 @@ pub const PUT_KW: &str = "put";
 pub const GET_KW: &str = "get";
 pub const WHILE_KW: &str = "while";
 pub const HEAD_KW: &str = "head";
+pub const TAPE_KW: &str = "tape";
 
 pub const SEMICOLON: &str = ";";
 pub const LBRACKET: &str = "(";
@@ -23,12 +24,15 @@ pub const SUB_ASSIGN_OP: &str = "-=";
 pub const VAR_PREFIX: &str = "v";
 
 const NUMBER_PTN: &str = r"(?i)(0x[0-9A-F]+)|([0-9]+)";
-const DELIMITER_PTN: &str = r"[ \t\r\n;\(\)\{\}]+";
+const DELIMITER_PTN: &str = r"[ \t\r\n;\(\)\[\]\{\}]+";
 
 pub struct Lexer;
 
 impl Lexer {
     pub fn lex(&self, code: &str) -> Result<Vec<Token>> {
+        const INDEX1: &str = "index1";
+        const INDEX2: &str = "index2";
+
         let wsp_re = {
             static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[ \t]").unwrap());
             LazyLock::force(&RE)
@@ -82,13 +86,23 @@ impl Lexer {
             LazyLock::force(&RE)
         };
         let static_variable_re = {
-            static RE: LazyLock<Regex> =
-                LazyLock::new(|| Regex::new(&format!("{}({})", VAR_PREFIX, NUMBER_PTN)).unwrap());
+            static RE: LazyLock<Regex> = LazyLock::new(|| {
+                Regex::new(&format!(
+                    r"({}(?P<{}>{}))|({}\[(?P<{}>{})\])",
+                    VAR_PREFIX, INDEX1, NUMBER_PTN, TAPE_KW, INDEX2, NUMBER_PTN
+                ))
+                .unwrap()
+            });
             LazyLock::force(&RE)
         };
         let dynamic_variable_re = {
-            static RE: LazyLock<Regex> =
-                LazyLock::new(|| Regex::new(&format!("{}{}", VAR_PREFIX, HEAD_KW)).unwrap());
+            static RE: LazyLock<Regex> = LazyLock::new(|| {
+                Regex::new(&format!(
+                    r"({}{})|({}\[{}\])",
+                    VAR_PREFIX, HEAD_KW, TAPE_KW, HEAD_KW
+                ))
+                .unwrap()
+            });
             LazyLock::force(&RE)
         };
 
@@ -138,7 +152,12 @@ impl Lexer {
                     value: Self::parse_number(num_str),
                 });
             } else if let Some(stat_var_str) = Self::cut_token(static_variable_re, code, &mut cur) {
-                let index = Self::parse_number(&stat_var_str[VAR_PREFIX.len()..]);
+                let caps = static_variable_re.captures(stat_var_str).unwrap();
+                let index = caps
+                    .name(INDEX1)
+                    .unwrap_or_else(|| caps.name(INDEX2).unwrap())
+                    .as_str();
+                let index = Self::parse_number(index);
                 result.push(Token::Variable(VariableToken::Static { index }));
             } else if Self::cut_token(dynamic_variable_re, code, &mut cur).is_some() {
                 result.push(Token::Variable(VariableToken::Dynamic));
@@ -190,7 +209,7 @@ mod test {
         let test_code = "v0 = 128
 v1 += 0x61; put(v0x1)
 while (vhead) {
-    vhead -= 1
+    tape[head] -= 1
     head += 0
 }";
         let expected_tokens = vec![
