@@ -1,0 +1,44 @@
+v0 = get()
+v0 -= 0x2F
+v1 = 10
+v2 = 1
+while (v1) {
+    v0 -= 1
+    while (v0) {
+        v3 += 1
+        v4 += 1
+        v0 -= 1
+    }
+    while (v4) {
+        v0 += 1
+        v4 -= 1
+    }
+    while (v3) {
+        v2 = 0
+        v3 = 0
+    }
+    while (v2) {
+        v3 = 1
+        v1 = 1
+        v2 = 0
+    }
+    v2 = 1
+    v1 -= 1
+}
+v4 = 1
+while (v3) {
+    v5 = 78; put(v5)
+    v6 = 117; put(v6)
+    v7 = 109; put(v7)
+    v8 = 98; put(v8)
+    v4 = 0
+    v3 = 0
+}
+while (v4) {
+    v5 = 79; put(v5)
+    v6 = 116; put(v6)
+    v7 = 104; put(v7)
+    v4 = 0
+}
+v9 = 101; put(v9)
+v10 = 114; put(v10)
