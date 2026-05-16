@@ -1,4 +1,6 @@
-use crate::parse::{AST, AssignNode, LValueNode, RValueNode, StatementNode, TopLevelNode, VariableNode, WhileNode};
+use crate::parse::{
+    AST, AssignNode, LValueNode, RValueNode, StatementNode, TopLevelNode, VariableNode, WhileNode,
+};
 
 struct TranspileContext {
     tape_len: usize,
@@ -7,7 +9,10 @@ struct TranspileContext {
 
 impl Default for TranspileContext {
     fn default() -> Self {
-        TranspileContext { tape_len: 4096, head: 0 }
+        TranspileContext {
+            tape_len: 4096,
+            head: 0,
+        }
     }
 }
 
@@ -23,9 +28,12 @@ impl Transpiler {
         let mut result = String::new();
         for node in toplevel {
             result += match node {
-                TopLevelNode::Statement(statement_node) => Self::transpile_statement(statement_node, ctx),
+                TopLevelNode::Statement(statement_node) => {
+                    Self::transpile_statement(statement_node, ctx)
+                }
                 TopLevelNode::While(while_node) => Self::transpile_while(while_node, ctx),
-            }.as_str();
+            }
+            .as_str();
         }
         result
     }
@@ -33,7 +41,9 @@ impl Transpiler {
     fn transpile_statement(statement_node: &StatementNode, ctx: &mut TranspileContext) -> String {
         match statement_node {
             StatementNode::Assign(assign_node) => Self::transpile_assgin(assign_node, ctx),
-            StatementNode::Put(put_node) => Self::transpile_variable(&put_node.character, ctx) + ".",
+            StatementNode::Put(put_node) => {
+                Self::transpile_variable(&put_node.character, ctx) + "."
+            }
         }
     }
 
@@ -48,55 +58,54 @@ impl Transpiler {
 
     fn transpile_assgin(assign_node: &AssignNode, ctx: &mut TranspileContext) -> String {
         match assign_node {
-            AssignNode::Simple(operand) => {
-                match &operand.lvalue {
-                    LValueNode::Variable(variable) => {
-                        Self::transpile_variable(&variable, ctx) + "[-]" + match &operand.rvalue {
+            AssignNode::Simple(operand) => match &operand.lvalue {
+                LValueNode::Variable(variable) => {
+                    Self::transpile_variable(variable, ctx)
+                        + "[-]"
+                        + match &operand.rvalue {
                             RValueNode::Number(number) => String::from("+").repeat(number.value),
                             RValueNode::Get(_) => String::from(","),
-                        }.as_str()
-                    }
-                    LValueNode::Head(_) => {
-                        let RValueNode::Number(number) = &operand.rvalue else {
-                            panic!("cannot assign user's input to head");
-                        };
-                        let diff = (number.value % ctx.tape_len) as isize - ctx.head as isize;
-                        Self::move_head(diff)
-                    },
+                        }
+                        .as_str()
                 }
-            }
-            AssignNode::Add(operand) => {
-                match &operand.lvalue {
-                    LValueNode::Variable(variable) => {
-                        let RValueNode::Number(number) = &operand.rvalue else {
-                            panic!("cannot add user's input");
-                        };
-                        Self::transpile_variable(&variable, ctx) + String::from("+").repeat(number.value).as_str()
-                    }
-                    LValueNode::Head(_) => {
-                        let RValueNode::Number(number) = &operand.rvalue else {
-                            panic!("cannot add user's input");
-                        };
-                        Self::move_head(number.value as isize)
-                    }
+                LValueNode::Head(_) => {
+                    let RValueNode::Number(number) = &operand.rvalue else {
+                        panic!("cannot assign user's input to head");
+                    };
+                    let diff = (number.value % ctx.tape_len) as isize - ctx.head as isize;
+                    Self::move_head(diff)
                 }
-            }
-            AssignNode::Sub(operand) => {
-                match &operand.lvalue {
-                    LValueNode::Variable(variable) => {
-                        let RValueNode::Number(number) = &operand.rvalue else {
-                            panic!("cannot subtract user's input");
-                        };
-                        Self::transpile_variable(&variable, ctx) + String::from("-").repeat(number.value).as_str()
-                    }
-                    LValueNode::Head(_) => {
-                        let RValueNode::Number(number) = &operand.rvalue else {
-                            panic!("cannot add user's input");
-                        };
-                        Self::move_head(-(number.value as isize))
-                    }
+            },
+            AssignNode::Add(operand) => match &operand.lvalue {
+                LValueNode::Variable(variable) => {
+                    let RValueNode::Number(number) = &operand.rvalue else {
+                        panic!("cannot add user's input");
+                    };
+                    Self::transpile_variable(variable, ctx)
+                        + String::from("+").repeat(number.value).as_str()
                 }
-            }
+                LValueNode::Head(_) => {
+                    let RValueNode::Number(number) = &operand.rvalue else {
+                        panic!("cannot add user's input");
+                    };
+                    Self::move_head(number.value as isize)
+                }
+            },
+            AssignNode::Sub(operand) => match &operand.lvalue {
+                LValueNode::Variable(variable) => {
+                    let RValueNode::Number(number) = &operand.rvalue else {
+                        panic!("cannot subtract user's input");
+                    };
+                    Self::transpile_variable(variable, ctx)
+                        + String::from("-").repeat(number.value).as_str()
+                }
+                LValueNode::Head(_) => {
+                    let RValueNode::Number(number) = &operand.rvalue else {
+                        panic!("cannot add user's input");
+                    };
+                    Self::move_head(-(number.value as isize))
+                }
+            },
         }
     }
 
@@ -107,17 +116,16 @@ impl Transpiler {
                 ctx.head = stat_var_node.index % ctx.tape_len;
                 Self::move_head(diff)
             }
-            VariableNode::Dynamic(_) => String::from("")
+            VariableNode::Dynamic(_) => String::from(""),
         }
     }
 
     fn move_head(diff: isize) -> String {
-
-                if diff >= 0 {
-                    String::from(">").repeat(diff as usize)
-                } else {
-                    String::from("<").repeat((-diff) as usize)
-                }
+        if diff >= 0 {
+            String::from(">").repeat(diff as usize)
+        } else {
+            String::from("<").repeat((-diff) as usize)
+        }
     }
 
     pub fn new() -> Self {
