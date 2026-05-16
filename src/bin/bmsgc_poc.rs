@@ -10,7 +10,7 @@ fn main() {
     let mut output_file = None;
     let mut input_file = None;
     let mut is_output_file = false;
-    for arg in env::args() {
+    for arg in env::args().skip(1) {
         if is_output_file {
             output_file = Some(arg);
             is_output_file = false;
