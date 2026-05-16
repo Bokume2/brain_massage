@@ -61,9 +61,11 @@ impl Transpiler {
             AssignNode::Simple(operand) => match &operand.lvalue {
                 LValueNode::Variable(variable) => {
                     Self::transpile_variable(variable, ctx)
-                        + "[-]"
                         + match &operand.rvalue {
-                            RValueNode::Number(number) => String::from("+").repeat(number.value),
+                            RValueNode::Number(number) => {
+                                String::from("[-]")
+                                    + String::from("+").repeat(number.value).as_str()
+                            }
                             RValueNode::Get(_) => String::from(","),
                         }
                         .as_str()
