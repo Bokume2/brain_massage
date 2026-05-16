@@ -111,7 +111,9 @@ impl Parser {
     }
 
     fn parse_get(tokens: &[Token], ctx: &mut ParseContext) -> Result<GetNode> {
-        ctx.cur += 1;
+        if let Some(token) = tokens.get(ctx.cur) && *token == Token::Get {
+            ctx.cur += 1
+        }
         if *Self::get_token_without_nl(tokens, ctx)? != Token::Bracket(BracketToken::Open) {
             bail!("\"get\" must be followed by \"(\"");
         }
