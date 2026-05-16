@@ -14,7 +14,6 @@ struct ParseContext {
     cur: usize,
 }
 
-
 pub struct Parser;
 
 impl Parser {
@@ -32,7 +31,10 @@ impl Parser {
         while ctx.cur < tokens.len() {
             let token = tokens.get(ctx.cur).unwrap();
             match token {
-                Token::NewLine | Token::Semicolon => continue,
+                Token::NewLine | Token::Semicolon => {
+                    ctx.cur += 1;
+                    continue;
+                }
                 Token::Variable(_) | Token::Head | Token::Put => {
                     result.push(TopLevelNode::Statement(Self::parse_statement(tokens, ctx)?))
                 }
@@ -43,7 +45,6 @@ impl Parser {
                 },
                 other => bail!(format!("Unexpected token {:?}", other)),
             }
-            ctx.cur += 1;
         }
         Ok(result)
     }
@@ -56,7 +57,7 @@ impl Parser {
             }
             other => bail!(format!("Expected statement, found {:?}", other)),
         };
-        let terminator = Self::get_token_without_nl(tokens, ctx)?;
+        let terminator = tokens.get(ctx.cur).unwrap_or(&Token::NewLine);
         if *terminator != Token::Semicolon && *terminator != Token::NewLine {
             bail!("statement must be terminated by \";\" or newline");
         }
@@ -154,10 +155,7 @@ impl Parser {
         }
     }
 
-    fn get_token_without_nl<'a>(
-        tokens: &'a [Token],
-        ctx: &mut ParseContext,
-    ) -> Result<&'a Token> {
+    fn get_token_without_nl<'a>(tokens: &'a [Token], ctx: &mut ParseContext) -> Result<&'a Token> {
         loop {
             let Some(token) = tokens.get(ctx.cur) else {
                 bail!("Unexpected EOF")
