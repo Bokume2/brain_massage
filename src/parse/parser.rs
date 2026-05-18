@@ -1,4 +1,4 @@
-use anyhow::{Ok, Result, bail};
+use anyhow::{Result, bail};
 
 use crate::{
     lex::{AssginToken, BracketToken, CurlyBracketToken, RCBRACKET, Token, VariableToken},
