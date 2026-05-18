@@ -28,13 +28,14 @@ fn main() {
     };
 
     let code = fs::read_to_string(&input_file)
-        .unwrap_or_else(|_| panic!("Cannot found input file {}", &input_file));
+        .unwrap_or_else(|_| panic!("Cannot find input file {}", &input_file));
     let tokens = Lexer::new().lex(&code).unwrap();
     let ast = Parser::new().parse(&tokens).unwrap();
     let bfcode = Transpiler::new().transpile(&ast);
 
     if let Some(output_file) = output_file {
-        let mut output_file = File::create(output_file).unwrap();
+        let mut output_file = File::create(&output_file)
+            .unwrap_or_else(|_| panic!("Cannot create or write to output file {}", &output_file));
         write!(output_file, "{}", bfcode).unwrap();
     } else {
         print!("{}", bfcode)
