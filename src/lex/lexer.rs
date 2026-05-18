@@ -163,8 +163,7 @@ impl Lexer {
                 result.push(Token::Variable(VariableToken::Dynamic));
             } else {
                 let token_like = delimiter_re.splitn(&code[cur..], 2).next().unwrap();
-                let message = format!("Unknown token \"{}\"", token_like);
-                bail!(message);
+                bail!("Unknown token \"{}\"", token_like);
             }
         }
         Ok(result)

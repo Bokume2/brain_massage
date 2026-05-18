@@ -41,9 +41,9 @@ impl Parser {
                 Token::While => result.push(TopLevelNode::While(Self::parse_while(tokens, ctx)?)),
                 Token::CurlyBracket(cbtoken) => match cbtoken {
                     CurlyBracketToken::Close => return Ok(result),
-                    CurlyBracketToken::Open => bail!(format!("Unexpected {}", RCBRACKET)),
+                    CurlyBracketToken::Open => bail!("Unexpected {}", RCBRACKET),
                 },
-                other => bail!(format!("Unexpected token {:?}", other)),
+                other => bail!("Unexpected token {:?}", other),
             }
         }
         Ok(result)
@@ -55,7 +55,7 @@ impl Parser {
             Token::Variable(_) | Token::Head => {
                 StatementNode::Assign(Self::parse_assign(tokens, ctx)?)
             }
-            other => bail!(format!("Expected statement, found {:?}", other)),
+            other => bail!("Expected statement, found {:?}", other),
         };
         let terminator = tokens.get(ctx.cur).unwrap_or(&Token::NewLine);
         if *terminator != Token::Semicolon && *terminator != Token::NewLine {
@@ -70,10 +70,10 @@ impl Parser {
             bail!("\"while\" must be followed by \"(\"");
         }
         let Token::Variable(condition_token) = Self::get_token_without_nl(tokens, ctx)? else {
-            bail!(format!(
+            bail!(
                 "expected variable, found {:?}",
                 tokens.get(ctx.cur - 1).unwrap()
-            ));
+            );
         };
         let condition = Self::parse_variable(condition_token);
         if *Self::get_token_without_nl(tokens, ctx)? != Token::Bracket(BracketToken::Close) {
@@ -98,10 +98,10 @@ impl Parser {
             bail!("\"put\" must be followed by \"(\"");
         }
         let Token::Variable(char_token) = Self::get_token_without_nl(tokens, ctx)? else {
-            bail!(format!(
+            bail!(
                 "expected variable, found {:?}",
                 tokens.get(ctx.cur - 1).unwrap()
-            ));
+            );
         };
         let character = Self::parse_variable(char_token);
         if *Self::get_token_without_nl(tokens, ctx)? != Token::Bracket(BracketToken::Close) {
@@ -129,7 +129,7 @@ impl Parser {
         let lvalue = match Self::get_token_without_nl(tokens, ctx)? {
             Token::Variable(var_token) => LValueNode::Variable(Self::parse_variable(var_token)),
             Token::Head => LValueNode::Head(HeadNode),
-            ohter => bail!(format!("expected variable or head, found {:?}", ohter)),
+            ohter => bail!("expected variable or head, found {:?}", ohter),
         };
         let Token::Assign(assign_token) = Self::get_token_without_nl(tokens, ctx)? else {
             bail!(
@@ -140,7 +140,7 @@ impl Parser {
         let rvalue = match Self::get_token_without_nl(tokens, ctx)? {
             Token::Number { value } => RValueNode::Number(NumberNode { value: *value }),
             Token::Get => RValueNode::Get(Self::parse_get(tokens, ctx)?),
-            other => bail!(format!("expected number or get, found {:?}", other)),
+            other => bail!("expected number or get, found {:?}", other),
         };
         let operand = AssignNodeOperand { lvalue, rvalue };
         Ok(match assign_token {
