@@ -187,12 +187,14 @@ impl Lexer {
         num_str.parse::<usize>().unwrap()
     }
 
-    pub fn new() -> Lexer {
+    #[inline]
+    pub const fn new() -> Lexer {
         Lexer
     }
 }
 
 impl Default for Lexer {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
