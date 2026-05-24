@@ -24,7 +24,7 @@ impl Transpiler {
         Self::transpile_toplevel(&ast.root, &mut ctx)
     }
 
-    fn transpile_toplevel(toplevel: &Vec<TopLevelNode>, ctx: &mut TranspileContext) -> String {
+    fn transpile_toplevel(toplevel: &[TopLevelNode], ctx: &mut TranspileContext) -> String {
         let mut result = String::new();
         for node in toplevel {
             result += match node {
