@@ -1,17 +1,18 @@
 ; プログラムは文とwhileループの任意個の繰り返し
-program = lwsp *( ( statement / while ) lwsp )
+program = lwsp *( ( statement / while ) lwsp ) [ statement_at_eof lwsp ]
 
 ; whileループは `while (<基準変数>) {...}`
 ; ループの中身は文とwhileループの任意個の繰り返し
 while = %s"while" lwsp "(" lwsp variable lwsp ")" lwsp "{" lwsp
-        *( ( statement / while ) lwsp )
+        *( ( statement / while ) lwsp ) [ statement_at_eof lwsp ]
         "}"
 
 ; 文は代入文、出力関数の呼び出し文または空文
-statement = assign_statement / put lwsp terminator / terminator
+statement = [ statement_at_eof lwsp ] terminator
+statement_at_eof = assign_statement / put
 
 ; 代入文には単純代入と複合代入(加算、減算のみ)がある
-assign_statement = ( assignment / compound_assignment ) lwsp terminator
+assign_statement = assignment / compound_assignment
 assignment = lvalue lwsp "=" lwsp rvalue
 compound_assignment = lvalue lwsp "+=" lwsp rvalue /
                        lvalue lwsp "-=" lwsp rvalue
