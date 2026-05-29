@@ -26,10 +26,13 @@ pub const VAR_PREFIX: &str = "v";
 const NUMBER_PTN: &str = r"(?i)(0x[0-9A-F]+)|([0-9]+)";
 const DELIMITER_PTN: &str = r"[ \t\r\n;\(\)\[\]\{\}]+";
 
-pub struct Lexer;
+pub struct Lexer<'source> {
+    code: &'source str,
+    cur: usize,
+}
 
-impl Lexer {
-    pub fn lex(&self, code: &str) -> Result<Vec<Token>> {
+impl<'source> Lexer<'source> {
+    pub fn lex(&mut self) -> Result<Vec<Token>> {
         const INDEX1: &str = "index1";
         const INDEX2: &str = "index2";
 
@@ -112,46 +115,45 @@ impl Lexer {
         };
 
         let mut result = Vec::new();
-        let mut cur: usize = 0;
-        while cur < code.len() {
-            if Self::cut_token(wsp_re, code, &mut cur).is_some() {
+        while self.cur < self.code.len() {
+            if self.cut_token(wsp_re).is_some() {
                 // nothing to do
-            } else if Self::cut_token(newline_re, code, &mut cur).is_some() {
+            } else if self.cut_token(newline_re).is_some() {
                 result.push(Token::NewLine);
-            } else if Self::cut_token(semicolon_re, code, &mut cur).is_some() {
+            } else if self.cut_token(semicolon_re).is_some() {
                 result.push(Token::Semicolon);
-            } else if Self::cut_token(put_re, code, &mut cur).is_some() {
+            } else if self.cut_token(put_re).is_some() {
                 result.push(Token::Put);
-            } else if Self::cut_token(get_re, code, &mut cur).is_some() {
+            } else if self.cut_token(get_re).is_some() {
                 result.push(Token::Get)
-            } else if Self::cut_token(while_re, code, &mut cur).is_some() {
+            } else if self.cut_token(while_re).is_some() {
                 result.push(Token::While);
-            } else if Self::cut_token(head_re, code, &mut cur).is_some() {
+            } else if self.cut_token(head_re).is_some() {
                 result.push(Token::Head);
-            } else if let Some(bracket_str) = Self::cut_token(bracket_re, code, &mut cur) {
+            } else if let Some(bracket_str) = self.cut_token(bracket_re) {
                 result.push(Token::Bracket(match bracket_str {
                     s if s == LBRACKET => BracketToken::Open,
                     s if s == RBRACKET => BracketToken::Close,
                     _ => unreachable!("Unexpected bracket_re match"),
                 }));
-            } else if let Some(cbracket_str) = Self::cut_token(curly_bracket_re, code, &mut cur) {
+            } else if let Some(cbracket_str) = self.cut_token(curly_bracket_re) {
                 result.push(Token::CurlyBracket(match cbracket_str {
                     s if s == LCBRACKET => CurlyBracketToken::Open,
                     s if s == RCBRACKET => CurlyBracketToken::Close,
                     _ => unreachable!("Unexpected curly_bracket_re match"),
                 }));
-            } else if let Some(assign_str) = Self::cut_token(assign_re, code, &mut cur) {
+            } else if let Some(assign_str) = self.cut_token(assign_re) {
                 result.push(Token::Assign(match assign_str {
                     s if s == SIMPLE_ASSIGN_OP => AssginToken::Simple,
                     s if s == ADD_ASSIGN_OP => AssginToken::Add,
                     s if s == SUB_ASSIGN_OP => AssginToken::Sub,
                     _ => unreachable!("Unexpected assign_re match"),
                 }));
-            } else if let Some(num_str) = Self::cut_token(number_re, code, &mut cur) {
+            } else if let Some(num_str) = self.cut_token(number_re) {
                 result.push(Token::Number {
                     value: Self::parse_number(num_str),
                 });
-            } else if let Some(stat_var_str) = Self::cut_token(static_variable_re, code, &mut cur) {
+            } else if let Some(stat_var_str) = self.cut_token(static_variable_re) {
                 let caps = static_variable_re.captures(stat_var_str).unwrap();
                 let index = caps
                     .name(INDEX1)
@@ -159,21 +161,24 @@ impl Lexer {
                     .as_str();
                 let index = Self::parse_number(index);
                 result.push(Token::Variable(VariableToken::Static { index }));
-            } else if Self::cut_token(dynamic_variable_re, code, &mut cur).is_some() {
+            } else if self.cut_token(dynamic_variable_re).is_some() {
                 result.push(Token::Variable(VariableToken::Dynamic));
             } else {
-                let token_like = delimiter_re.splitn(&code[cur..], 2).next().unwrap();
+                let token_like = delimiter_re
+                    .splitn(&self.code[self.cur..], 2)
+                    .next()
+                    .unwrap();
                 bail!("Unknown token \"{}\"", token_like);
             }
         }
         Ok(result)
     }
 
-    fn cut_token<'a>(re: &Regex, code: &'a str, cur: &mut usize) -> Option<&'a str> {
-        let m = re.find_at(code, *cur)?;
-        if m.start() == *cur {
+    fn cut_token(&mut self, re: &Regex) -> Option<&'source str> {
+        let m = re.find_at(self.code, self.cur)?;
+        if m.start() == self.cur {
             let token_str = m.as_str();
-            *cur += token_str.len();
+            self.cur += token_str.len();
             Some(token_str)
         } else {
             None
@@ -188,15 +193,8 @@ impl Lexer {
     }
 
     #[inline]
-    pub const fn new() -> Lexer {
-        Lexer
-    }
-}
-
-impl Default for Lexer {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
+    pub const fn new(code: &'source str) -> Lexer<'source> {
+        Lexer { code, cur: 0 }
     }
 }
 
@@ -244,7 +242,7 @@ while (vhead) {
             Token::CurlyBracket(CurlyBracketToken::Close),
         ];
 
-        assert_eq!(expected_tokens, Lexer::new().lex(test_code)?);
+        assert_eq!(expected_tokens, Lexer::new(test_code).lex()?);
 
         Ok(())
     }
@@ -252,6 +250,6 @@ while (vhead) {
     #[test]
     fn lex_of_illegal_code_fail() {
         let illegal_code = "hoge";
-        assert!(Lexer::new().lex(illegal_code).is_err())
+        assert!(Lexer::new(illegal_code).lex().is_err())
     }
 }
