@@ -1,4 +1,4 @@
-use anyhow::{Result, bail};
+use anyhow::{Result, anyhow, bail};
 
 use crate::{
     parse::{
@@ -144,7 +144,18 @@ impl<'input> Transpiler<'input> {
                 if !self.allow_static_variable() {
                     bail!(Self::MESSAGE_NOT_ALLOWED_STATIC_VAR);
                 }
-                self.set_head(static_var_node.index)
+                let index = if self.info.var_map_compressed {
+                    *self
+                        .info
+                        .var_map
+                        .get(&static_var_node.index)
+                        .ok_or_else(|| {
+                            anyhow!("Illegal semantic info: Variable mapping is broken")
+                        })?
+                } else {
+                    static_var_node.index
+                };
+                self.set_head(index)
             }
             Dynamic(_) => vec![],
         })

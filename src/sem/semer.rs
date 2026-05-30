@@ -57,7 +57,7 @@ impl<'opts> Semer<'opts> {
     pub fn sem(&mut self, ast: &mut AST) -> Result<SemanticInfo> {
         self.info.first_cur_dyn_var_only = ast.root.len();
         self.visit_toplevel_nodes(&mut ast.root)?;
-        if self.opts.compress_var_map && self.allow_static_variable() {
+        if self.opts.compress_var_map && self.info.first_cur_dyn_var_only >= ast.root.len() {
             let mut var_indexes = self.var_indexes.iter().collect::<Vec<_>>();
             var_indexes.sort();
             if let Some(last_index) = var_indexes.last()
