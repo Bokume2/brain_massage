@@ -168,7 +168,7 @@ impl<'input> Transpiler<'input> {
         }
         self.used_vars[self.head] = true;
         //TODO: +または-の繰り返しを短縮する最適化を実装
-        vec![inst; value]
+        todo!("Please disable inc/dec repetition compaction");
     }
 
     fn move_head(&mut self, diff: usize, positive: bool) -> Vec<BFToken> {
