@@ -58,6 +58,7 @@ impl<'input> Transpiler<'input> {
                 Statement(staement_node) => self.transpile_statement(staement_node)?,
                 While(while_node) => {
                     let in_while = self.in_while;
+                    self.in_while = true;
                     let result_while = self.transpile_while(while_node)?;
                     self.in_while = in_while;
                     result_while
@@ -78,12 +79,11 @@ impl<'input> Transpiler<'input> {
     }
 
     fn transpile_while(&mut self, node: &WhileNode) -> Result<Vec<BFToken>> {
-        let condition = self.transpile_variable(&node.condition)?;
         Ok([
-            condition.clone(),
+            self.transpile_variable(&node.condition)?,
             vec![OPN],
             self.transpile_toplevel_nodes(&node.content)?,
-            condition,
+            self.transpile_variable(&node.condition)?,
             vec![CLS],
         ]
         .concat())
