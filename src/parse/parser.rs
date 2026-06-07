@@ -176,7 +176,7 @@ impl<'source> Parser<'source> {
 
     #[inline]
     pub const fn new(tokens: &'source [Token]) -> Self {
-        Parser { tokens, cur: 0 }
+        Self { tokens, cur: 0 }
     }
 }
 

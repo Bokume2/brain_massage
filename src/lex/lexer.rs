@@ -194,7 +194,7 @@ impl<'source> Lexer<'source> {
 
     #[inline]
     pub const fn new(code: &'source str) -> Self {
-        Lexer { code, cur: 0 }
+        Self { code, cur: 0 }
     }
 }
 

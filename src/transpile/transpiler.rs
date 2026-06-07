@@ -23,7 +23,7 @@ pub struct TranspileOptimizationOptions {
 impl Default for TranspileOptimizationOptions {
     #[inline]
     fn default() -> Self {
-        TranspileOptimizationOptions {
+        Self {
             number_compaction: true,
             head_move_around_compaction: true,
         }
@@ -210,7 +210,7 @@ impl<'input> Transpiler<'input> {
         info: &'input SemanticInfo,
         opts: &'input TranspileOptimizationOptions,
     ) -> Self {
-        Transpiler {
+        Self {
             ast,
             info,
             opts,
