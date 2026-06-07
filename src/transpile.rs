@@ -7,6 +7,7 @@ pub use transpiler::*;
 use anyhow::Result;
 
 use crate::{parse::AST, sem::SemanticInfo};
+use BFToken::{CLS, DEC, GET, INC, NXT, OPN, PRV, PUT};
 
 pub const BF_INC: char = '+';
 pub const BF_DEC: char = '-';
@@ -50,4 +51,17 @@ pub fn transpile_with_opt_struct(
         .iter()
         .map(bf_token_char)
         .collect::<String>())
+}
+
+pub fn bf_token_char(token: &BFToken) -> char {
+    match token {
+        INC => BF_INC,
+        DEC => BF_DEC,
+        NXT => BF_NXT,
+        PRV => BF_PRV,
+        GET => BF_GET,
+        PUT => BF_PUT,
+        OPN => BF_OPN,
+        CLS => BF_CLS,
+    }
 }
