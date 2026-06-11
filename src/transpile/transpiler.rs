@@ -1,6 +1,7 @@
 use anyhow::{Result, anyhow, bail};
 
 use crate::{
+    CELL_SIZE,
     parse::{
         AST,
         AssignNode::{self, Add, Simple, Sub},
@@ -12,7 +13,10 @@ use crate::{
         WhileNode,
     },
     sem::SemanticInfo,
-    transpile::BFToken::{self, CLS, DEC, GET, INC, NXT, OPN, PRV, PUT},
+    transpile::{
+        BFToken::{self, CLS, DEC, GET, INC, NXT, OPN, PRV, PUT},
+        compaction_map,
+    },
 };
 
 pub struct TranspileOptimizationOptions {
@@ -167,8 +171,75 @@ impl<'input> Transpiler<'input> {
             return vec![inst; value];
         }
         self.used_vars[self.head] = true;
+        let value = value % CELL_SIZE;
         //TODO: +または-の繰り返しを短縮する最適化を実装
-        todo!("Please disable inc/dec repetition compaction");
+        let mut dists = self
+            .used_vars
+            .iter()
+            .enumerate()
+            .map(|(i, e)| (i, *e))
+            .collect::<Vec<_>>();
+        dists.remove(self.head);
+        let closest_index = |sl: &[_], base: usize| {
+            let mut min_dist = self.info.tape_len;
+            let mut result = base;
+            for (i, v) in sl {
+                if !v && *i != base && base.abs_diff(*i) < min_dist {
+                    min_dist = base.abs_diff(*i);
+                    result = *i;
+                }
+            }
+            result
+        };
+        let first_closest = closest_index(&dists, self.head);
+        if first_closest == self.head {
+            return vec![inst; value];
+        }
+        let (map, inc) = compaction_map(value);
+        if map.len() == 1 {
+            return vec![inst; value];
+        }
+        let mut result = vec![];
+        let mut trailer = vec![];
+        let head = self.head;
+        let mut latest = head;
+        for (i, n) in map.iter().enumerate().skip(1) {
+            let next = closest_index(&dists, latest);
+            self.head = next;
+            result = [
+                result,
+                vec![OPN],
+                self.set_head(latest),
+                vec![if i == map.len() - 1 { inst } else { INC }; *n],
+            ]
+            .concat();
+            trailer = [self.set_head(next), vec![DEC, CLS], trailer].concat();
+            if let Some(pos) = dists.iter().position(|(i, _)| *i == latest) {
+                dists.remove(pos);
+            }
+            latest = next;
+        }
+        self.head = head;
+        let compacted = [
+            self.set_head(latest),
+            vec![INC; *map.first().unwrap()],
+            result,
+            trailer,
+            self.set_head(head),
+            vec![
+                if inc >= 0 && positive || inc < 0 && !positive {
+                    INC
+                } else {
+                    DEC
+                };
+                inc.unsigned_abs()
+            ],
+        ]
+        .concat();
+        if compacted.len() >= value {
+            return vec![inst; value];
+        }
+        compacted
     }
 
     fn move_head(&mut self, diff: usize, positive: bool) -> Vec<BFToken> {

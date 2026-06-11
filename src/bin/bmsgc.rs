@@ -64,8 +64,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     if cli.emit_bf {
-        // TODO: +または-の繰り返しの短縮を実装してデフォルトオプションのまま使えるように
-        let bfcode = transpile::transpile_with_opts(&ast, &sem_info, false, true)?;
+        let bfcode = transpile::transpile(&ast, &sem_info)?;
         write_out(cli.output_file, &bfcode)?;
         return Ok(());
     }

@@ -4,6 +4,9 @@ pub use bf_defnitions::*;
 pub mod transpiler;
 pub use transpiler::*;
 
+pub mod optimization;
+pub use optimization::*;
+
 use anyhow::Result;
 
 use crate::{parse::AST, sem::SemanticInfo};
