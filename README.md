@@ -21,3 +21,6 @@ bmsgc -t <SOURCE_FILE> -o <OUTPUT_FILE>
 より詳細な使い方については、各コマンドを`--help`オプションを付けて実行してください。  
 
 **注意**: 現在のバージョンではBrainf*ckへのトランスパイルのみ利用可能です。  
+
+## Language Specification
+簡易的な入門チュートリアルを[言語仕様(簡易版)](docs/tutorial.md)に解説しています。BrainMassageのソースコードを自身で新しく書く場合に参照してください。  
