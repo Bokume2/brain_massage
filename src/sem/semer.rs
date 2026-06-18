@@ -102,6 +102,8 @@ impl<'opts> Semer<'opts> {
     }
 
     fn visit_assignment(&mut self, node: &mut AssignNode) -> Result<()> {
+        let message_specify_head_in_dyn_mode =
+            "Cannot assign literal to head after moving head in while";
         let message_input_to_head = "Cannot assign user's input to head";
         let message_add_input = "Cannot add user's input";
         let message_sub_input = "Cannot subtract user's input";
@@ -122,6 +124,8 @@ impl<'opts> Semer<'opts> {
                                 if self.opts.round_var_index {
                                     self.head %= self.info.tape_len;
                                 }
+                            } else {
+                                bail!(message_specify_head_in_dyn_mode);
                             }
                         }
                         Get(_) => bail!(message_input_to_head),
