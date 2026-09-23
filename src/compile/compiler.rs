@@ -51,16 +51,29 @@ impl<'a, 'ctx> Compiler<'a, 'ctx> {
     fn compiling_init(&mut self, sem_info: &SemanticInfo) {
         let entry = self.ctx.append_basic_block(self.main, "entry");
         self.builder.position_at_end(entry);
+        let i64_type = self.ctx.i64_type();
+        let calloc = self.module.add_function(
+            "calloc",
+            self.ctx
+                .ptr_type(0.into())
+                .fn_type(&[i64_type.into(), i64_type.into()], false),
+            None,
+        );
         let tape = self
             .builder
-            .build_array_malloc(
-                self.cell_type,
-                self.ctx
-                    .i64_type()
-                    .const_int(sem_info.tape_len as u64, false),
+            .build_call(
+                calloc,
+                &[
+                    i64_type.const_int(sem_info.tape_len as u64, false).into(),
+                    i64_type.const_int(1, false).into(),
+                ],
                 "tape",
             )
-            .unwrap();
+            .unwrap()
+            .try_as_basic_value()
+            .basic()
+            .unwrap()
+            .into_pointer_value();
         _ = self.tape.set(tape);
         let head = self.builder.build_alloca(self.head_type, "head").unwrap();
         _ = self.head.set(head);
