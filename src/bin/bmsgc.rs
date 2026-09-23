@@ -1,11 +1,16 @@
-use anyhow::Context;
+use anyhow::{Context, bail};
 use clap::Parser;
+use inkwell::{OptimizationLevel, context::Context as InkwellCtx, targets::FileType};
 use std::{
     fs::{self, File},
     io::Write,
+    path::Path,
 };
 
-use brain_massage::{lex, parse, sem, transpile};
+use brain_massage::{
+    compile::{self, get_generic_target_machine, run_optimization_passes},
+    lex, parse, sem, transpile,
+};
 
 const DEFALT_TAPE_LEN: usize = 4096;
 
@@ -46,8 +51,8 @@ struct Cli {
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-    if !cli.emit_bf {
-        todo!("Now only can transpile to Brainf*ck, use `-t` option");
+    if !cli.emit_bf && !cli.emit_llvm && !cli.compile_only && !cli.compile_and_assemble_only {
+        todo!("Now cannot use compiling to executable");
     }
 
     let code = fs::read_to_string(&cli.source_file)
@@ -66,6 +71,45 @@ fn main() -> anyhow::Result<()> {
     if cli.emit_bf {
         let bfcode = transpile::transpile(&ast, &sem_info)?;
         write_out(cli.output_file, &bfcode)?;
+        return Ok(());
+    }
+
+    let ctx = InkwellCtx::create();
+    let module = compile::compile(&ast, &sem_info, &ctx, &cli.source_file)?;
+    let opt_level = match cli.opt_lv {
+        0 => OptimizationLevel::None,
+        1 => OptimizationLevel::Less,
+        2 => OptimizationLevel::Default,
+        3 => OptimizationLevel::Aggressive,
+        _ => unreachable!("Command line argument opt_lv must be 0 to 3"),
+    };
+    let target_machine = get_generic_target_machine(&module.get_triple());
+    run_optimization_passes(&module, opt_level, &target_machine)?;
+
+    if cli.emit_llvm {
+        write_out(cli.output_file, &module.to_string())?;
+        return Ok(());
+    }
+
+    if cli.compile_only {
+        if let Some(output_file) = &cli.output_file {
+            let output_file = Path::new(output_file);
+            target_machine.write_to_file(&module, FileType::Assembly, output_file)?;
+        } else {
+            let memory_buffer =
+                target_machine.write_to_memory_buffer(&module, FileType::Assembly)?;
+            write_out(None, &String::from_utf8_lossy(memory_buffer.as_slice()))?;
+        }
+        return Ok(());
+    }
+
+    let Some(output_file) = &cli.output_file else {
+        bail!("stdout cannot be used as output when compiler emits bianry code");
+    };
+
+    if cli.compile_and_assemble_only {
+        let output_file = Path::new(output_file);
+        target_machine.write_to_file(&module, FileType::Object, output_file)?;
         return Ok(());
     }
 

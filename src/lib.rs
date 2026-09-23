@@ -6,4 +6,6 @@ pub mod sem;
 
 pub mod transpile;
 
+pub mod compile;
+
 pub const CELL_SIZE: usize = 0x100;
