@@ -14,8 +14,8 @@ statement_at_eof = assign_statement / put
 ; 代入文には単純代入と複合代入(加算、減算のみ)がある
 assign_statement = assignment / compound_assignment
 assignment = lvalue lwsp "=" lwsp rvalue
-compound_assignment = lvalue lwsp "+=" lwsp rvalue /
-                       lvalue lwsp "-=" lwsp rvalue
+compound_assignment = lvalue lwsp "+=" lwsp number /
+                       lvalue lwsp "-=" lwsp number
 
 ; 代入文の左辺値と右辺値
 lvalue = variable / head
