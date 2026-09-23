@@ -3,7 +3,7 @@ use anyhow::{Result, bail};
 use crate::{
     lex::{AssginToken, BracketToken, CurlyBracketToken, LCBRACKET, Token, VariableToken},
     parse::{
-        AST, AssignNode, AssignNodeOperand, DynamicVariableNode, GetNode, HeadNode, LValueNode,
+        AST, AssignNode, AssignNodeType, DynamicVariableNode, GetNode, HeadNode, LValueNode,
         NumberNode, PutNode, RValueNode, StatementNode, StaticVariableNode, TopLevelNode,
         VariableNode, WhileNode,
     },
@@ -139,11 +139,15 @@ impl<'source> Parser<'source> {
             }
             other => bail!("expected number or get, found {:?}", other),
         };
-        let operand = AssignNodeOperand { lvalue, rvalue };
-        Ok(match assign_token {
-            AssginToken::Simple => AssignNode::Simple(operand),
-            AssginToken::Add => AssignNode::Add(operand),
-            AssginToken::Sub => AssignNode::Sub(operand),
+        let assign_type = match assign_token {
+            AssginToken::Simple => AssignNodeType::Simple,
+            AssginToken::Add => AssignNodeType::Add,
+            AssginToken::Sub => AssignNodeType::Sub,
+        };
+        Ok(AssignNode {
+            lvalue,
+            rvalue,
+            assign_type,
         })
     }
 
@@ -183,7 +187,8 @@ impl<'source> Parser<'source> {
 #[cfg(test)]
 mod test {
     use crate::parse::{
-        AssignNode::{Add, Simple, Sub},
+        AssignNode,
+        AssignNodeType::{Add, Simple, Sub},
         LValueNode::{Head, Variable},
         RValueNode::{Get, Number},
         StatementNode::{Assign, Put},
@@ -234,32 +239,37 @@ mod test {
 
         let expected_ast = AST {
             root: vec![
-                Statement(Assign(Simple(AssignNodeOperand {
+                Statement(Assign(AssignNode {
                     lvalue: Variable(Static(StaticVariableNode { index: 0 })),
                     rvalue: Number(NumberNode { value: 128 }),
-                }))),
-                Statement(Assign(Add(AssignNodeOperand {
+                    assign_type: Simple,
+                })),
+                Statement(Assign(AssignNode {
                     lvalue: Variable(Static(StaticVariableNode { index: 1 })),
                     rvalue: Number(NumberNode { value: 0x61 }),
-                }))),
+                    assign_type: Add,
+                })),
                 Statement(Put(PutNode {
                     character: Static(StaticVariableNode { index: 0x1 }),
                 })),
                 While(WhileNode {
                     condition: Dynamic(DynamicVariableNode),
                     content: vec![
-                        Statement(Assign(Sub(AssignNodeOperand {
+                        Statement(Assign(AssignNode {
                             lvalue: Variable(Dynamic(DynamicVariableNode)),
                             rvalue: Number(NumberNode { value: 1 }),
-                        }))),
-                        Statement(Assign(Add(AssignNodeOperand {
+                            assign_type: Sub,
+                        })),
+                        Statement(Assign(AssignNode {
                             lvalue: Head(HeadNode),
                             rvalue: Number(NumberNode { value: 0 }),
-                        }))),
-                        Statement(Assign(Simple(AssignNodeOperand {
+                            assign_type: Add,
+                        })),
+                        Statement(Assign(AssignNode {
                             lvalue: Variable(Dynamic(DynamicVariableNode)),
                             rvalue: Get(GetNode),
-                        }))),
+                            assign_type: Simple,
+                        })),
                     ],
                 }),
             ],

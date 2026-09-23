@@ -22,16 +22,17 @@ pub enum StatementNode {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum AssignNode {
-    Simple(AssignNodeOperand),
-    Add(AssignNodeOperand),
-    Sub(AssignNodeOperand),
+pub struct AssignNode {
+    pub lvalue: LValueNode,
+    pub rvalue: RValueNode,
+    pub assign_type: AssignNodeType,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct AssignNodeOperand {
-    pub lvalue: LValueNode,
-    pub rvalue: RValueNode,
+pub enum AssignNodeType {
+    Simple,
+    Add,
+    Sub,
 }
 
 #[derive(Debug, PartialEq, Eq)]

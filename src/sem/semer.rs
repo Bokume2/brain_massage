@@ -5,8 +5,8 @@ use anyhow::{Result, bail};
 use crate::{
     CELL_SIZE,
     parse::{
-        AST,
-        AssignNode::{self, Add, Simple, Sub},
+        AST, AssignNode,
+        AssignNodeType::{Add, Simple, Sub},
         LValueNode::{Head, Variable},
         NumberNode,
         RValueNode::{Get, Number},
@@ -116,69 +116,48 @@ impl<'opts> Semer<'opts> {
         let message_input_to_head = "Cannot assign user's input to head";
         let message_add_input = "Cannot add user's input";
         let message_sub_input = "Cannot subtract user's input";
-        match node {
-            Simple(operand) => match &mut operand.lvalue {
-                Variable(variable_node) => {
-                    self.visit_variable(variable_node)?;
+        if let Get(_) = &node.rvalue {
+            match node.assign_type {
+                Simple => {}
+                Add => bail!(message_add_input),
+                Sub => bail!(message_sub_input),
+            }
+        }
+        match &mut node.lvalue {
+            Variable(variable_node) => {
+                self.visit_variable(variable_node)?;
+                if let Number(number_node) = &mut node.rvalue {
+                    self.visit_number(number_node);
                 }
-                Head(_) => {
-                    if self.in_while {
-                        self.mark_last_cur();
-                    }
-                    match &mut operand.rvalue {
-                        Number(number_node) => {
-                            self.visit_number(number_node);
-                            if self.allow_static_variable() {
-                                self.head = number_node.value;
-                                if self.opts.round_var_index {
-                                    self.head %= self.info.tape_len;
-                                }
-                            } else {
-                                bail!(message_specify_head_in_dyn_mode);
-                            }
-                        }
-                        Get(_) => bail!(message_input_to_head),
-                    }
-                }
-            },
-            Add(operand) => {
-                let Number(number_node) = &mut operand.rvalue else {
-                    bail!(message_add_input);
+            }
+            Head(_) => {
+                let Number(number_node) = &node.rvalue else {
+                    bail!(message_input_to_head);
                 };
-                match &mut operand.lvalue {
-                    Variable(variable_node) => {
-                        self.visit_variable(variable_node)?;
+                match node.assign_type {
+                    Simple => {
+                        if self.allow_static_variable() {
+                        } else {
+                            bail!(message_specify_head_in_dyn_mode);
+                        }
                     }
-                    Head(_) => {
+                    Add => {
                         if self.in_while {
                             self.mark_last_cur();
                         } else if self.allow_static_variable() {
                             self.head += number_node.value;
-                            if self.opts.round_var_index {
-                                self.head %= self.info.tape_len;
-                            }
                         }
                     }
-                }
-            }
-            Sub(operand) => {
-                let Number(number_node) = &mut operand.rvalue else {
-                    bail!(message_sub_input);
-                };
-                match &mut operand.lvalue {
-                    Variable(variable_node) => {
-                        self.visit_variable(variable_node)?;
-                    }
-                    Head(_) => {
+                    Sub => {
                         if self.in_while {
                             self.mark_last_cur();
                         } else if self.allow_static_variable() {
                             self.head -= number_node.value;
-                            if self.opts.round_var_index {
-                                self.head %= self.info.tape_len;
-                            }
                         }
                     }
+                }
+                if self.opts.round_var_index {
+                    self.head %= self.info.tape_len;
                 }
             }
         }

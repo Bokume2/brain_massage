@@ -3,8 +3,8 @@ use anyhow::{Result, anyhow, bail};
 use crate::{
     CELL_SIZE,
     parse::{
-        AST,
-        AssignNode::{self, Add, Simple, Sub},
+        AST, AssignNode,
+        AssignNodeType::{Add, Simple, Sub},
         LValueNode::{Head, Variable},
         RValueNode::{Get, Number},
         StatementNode::{self, Assign, Put},
@@ -94,49 +94,38 @@ impl<'input> Transpiler<'input> {
     }
 
     fn transpile_assign(&mut self, node: &AssignNode) -> Result<Vec<BFToken>> {
-        Ok(match node {
-            Simple(operand) => match &operand.lvalue {
-                Variable(var_node) => [
-                    self.transpile_variable(var_node)?,
-                    match &operand.rvalue {
-                        Number(num_node) => [
-                            vec![OPN, DEC, CLS],
-                            self.transpile_number(num_node.value, true),
-                        ]
-                        .concat(),
-                        Get(_) => vec![GET],
-                    },
-                ]
-                .concat(),
-                Head(_) => match &operand.rvalue {
-                    Number(number_node) => self.set_head(number_node.value),
-                    Get(_) => bail!(Self::MESSAGE_INPUT_TO_HEAD),
+        Ok(match &node.lvalue {
+            Variable(var_node) => [
+                self.transpile_variable(var_node)?,
+                match &node.rvalue {
+                    Number(num_node) => [
+                        if node.assign_type == Simple {
+                            vec![OPN, DEC, CLS]
+                        } else {
+                            vec![]
+                        },
+                        self.transpile_number(num_node.value, node.assign_type != Sub),
+                    ]
+                    .concat(),
+                    Get(_) => {
+                        match node.assign_type {
+                            Simple => {}
+                            Add => bail!(Self::MESSAGE_ADD_INPUT),
+                            Sub => bail!(Self::MESSAGE_SUB_INPUT),
+                        }
+                        vec![GET]
+                    }
                 },
-            },
-            Add(operand) => {
-                let Number(num_node) = &operand.rvalue else {
-                    bail!(Self::MESSAGE_ADD_INPUT);
+            ]
+            .concat(),
+            Head(_) => {
+                let Number(num_node) = &node.rvalue else {
+                    bail!(Self::MESSAGE_INPUT_TO_HEAD);
                 };
-                match &operand.lvalue {
-                    Variable(var_node) => [
-                        self.transpile_variable(var_node)?,
-                        self.transpile_number(num_node.value, true),
-                    ]
-                    .concat(),
-                    Head(_) => self.move_head(num_node.value, true),
-                }
-            }
-            Sub(operand) => {
-                let Number(num_node) = &operand.rvalue else {
-                    bail!(Self::MESSAGE_SUB_INPUT);
-                };
-                match &operand.lvalue {
-                    Variable(var_node) => [
-                        self.transpile_variable(var_node)?,
-                        self.transpile_number(num_node.value, false),
-                    ]
-                    .concat(),
-                    Head(_) => self.move_head(num_node.value, false),
+                if node.assign_type == Simple {
+                    self.set_head(num_node.value)
+                } else {
+                    self.move_head(num_node.value, node.assign_type != Sub)
                 }
             }
         })
