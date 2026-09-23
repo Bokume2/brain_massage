@@ -44,6 +44,15 @@ pub struct SemanticInfo {
     pub warn_big_literal: bool,
 }
 
+impl SemanticInfo {
+    pub fn actual_index(&self, raw_index: usize) -> Option<usize> {
+        if !self.var_map_compressed {
+            return Some(raw_index);
+        }
+        Some(*self.var_map.get(&raw_index)?)
+    }
+}
+
 pub struct Semer<'opts> {
     opts: &'opts SemOptimizationOptions,
     info: SemanticInfo,
