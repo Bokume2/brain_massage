@@ -51,7 +51,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     let code = fs::read_to_string(&cli.source_file)
-        .with_context(|| format!("Cannot read source file {}", &cli.source_file))?;
+        .with_context(|| format!("Cannot read source file {}", cli.source_file))?;
     let tokens = lex::lex(&code)?;
     let mut ast = parse::parse(&tokens)?;
     let sem_info = sem::sem(&mut ast, cli.tape_len)?;
@@ -79,7 +79,7 @@ fn warn(message: &str) {
 
 fn write_out(output_file: Option<String>, content: &str) -> anyhow::Result<()> {
     if let Some(output_file) = output_file {
-        let write_error = || format!("Cannot write to output file {}", &output_file);
+        let write_error = || format!("Cannot write to output file {}", output_file);
         let mut output_file = File::create(&output_file).with_context(write_error)?;
         writeln!(output_file, "{}", content).with_context(write_error)?;
     } else {
