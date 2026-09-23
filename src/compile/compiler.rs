@@ -118,7 +118,9 @@ impl<'a, 'ctx> Compiler<'a, 'ctx> {
         node: &WhileNode,
         sem_info: &SemanticInfo,
     ) -> Result<(BasicBlock<'ctx>, BasicBlock<'ctx>)> {
-        let start = self.builder.get_insert_block().unwrap();
+        let start = self.append_basic_block();
+        self.builder.build_unconditional_branch(start).unwrap();
+        self.builder.position_at_end(start);
         let v = self.load_variable(&node.condition, sem_info)?;
         let cond = self
             .builder
