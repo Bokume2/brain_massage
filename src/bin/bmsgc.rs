@@ -1,10 +1,12 @@
-use anyhow::{Context, bail};
+use anyhow::Context;
 use clap::Parser;
 use inkwell::{OptimizationLevel, context::Context as InkwellCtx, targets::FileType};
+use regex::Regex;
 use std::{
     fs::{self, File},
     io::Write,
     path::Path,
+    process::{Command, exit},
 };
 
 use brain_massage::{
@@ -51,9 +53,6 @@ struct Cli {
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-    if !cli.emit_bf && !cli.emit_llvm && !cli.compile_only && !cli.compile_and_assemble_only {
-        todo!("Now cannot use compiling to executable");
-    }
 
     let code = fs::read_to_string(&cli.source_file)
         .with_context(|| format!("Cannot read source file {}", cli.source_file))?;
@@ -103,14 +102,39 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let Some(output_file) = &cli.output_file else {
-        bail!("stdout cannot be used as output when compiler emits bianry code");
-    };
+    let output_file = &cli
+        .output_file
+        .unwrap_or_else(|| make_output_filename(&cli.source_file, cli.compile_and_assemble_only));
 
     if cli.compile_and_assemble_only {
         let output_file = Path::new(output_file);
         target_machine.write_to_file(&module, FileType::Object, output_file)?;
         return Ok(());
+    }
+
+    let tmp_obj_filename: &str = "tmp.o";
+    let tmp_obj_path = Path::new(tmp_obj_filename);
+    target_machine.write_to_file(&module, FileType::Object, tmp_obj_path)?;
+
+    let maybe_tmp_file_remain = || {
+        format!(
+            "This error caused, and because of it, temporary file {} may remain",
+            tmp_obj_filename
+        )
+    };
+
+    let status = Command::new("cc")
+        .arg(tmp_obj_filename)
+        .arg("-o")
+        .arg(output_file)
+        .spawn()
+        .with_context(maybe_tmp_file_remain)?
+        .wait()
+        .with_context(maybe_tmp_file_remain)?;
+    fs::remove_file(tmp_obj_path)?;
+
+    if !status.success() {
+        exit(status.code().unwrap_or(1));
     }
 
     Ok(())
@@ -130,6 +154,23 @@ fn write_out(output_file: Option<String>, content: &str) -> anyhow::Result<()> {
         println!("{}", content);
     }
     Ok(())
+}
+
+fn make_output_filename(source_file: &str, is_object_file: bool) -> String {
+    let source_file = source_file.to_string();
+    let has_ext = Regex::new(r".+\.[^\/]+$").unwrap().is_match(&source_file);
+    if !has_ext {
+        return Regex::new(r"[^\/]*$")
+            .unwrap()
+            .replace(&source_file, "")
+            .to_string()
+            + "a.out";
+    }
+    Regex::new(r"\.[^\.]+?$")
+        .unwrap()
+        .replace(&source_file, "")
+        .to_string()
+        + if is_object_file { ".o" } else { "" }
 }
 
 #[cfg(test)]
