@@ -1,6 +1,22 @@
 # BrainMassage
 Brainf\*ckの記述を実用言語風の読みやすい形式に置き換え、トランスパイルの難易度が上がらない範囲で記述を簡略化した言語です。  
 
+## Using in Docker
+複雑なビルド準備をせずに、BrainMassageを手軽に体験するためのDockerコンテナ定義を用意しています。  
+Dockerをインストールした上で、リポジトリを`git clone`等でコピーし、リポジトリのルート(最上位ディレクトリ)で以下のコマンドを実行してコンテナをビルドします。  
+```bash
+UID=$(id -u) GID=$(id -g) docker compose build
+```
+その後、次のコマンドの`<ARGS...>`に通常通りコマンドライン引数(ソースファイル名など)を渡せば、`bmsgc`コンパイラが実行できます。  
+```bash
+docker compose run -q --rm compiler bmsgc <ARGS...>
+```
+または、次のコマンドで対話シェルを起動すると、そのシェルの中で`bmsgc`コマンドが使用可能です。コンパイルによって出力された実行可能ファイルがコンテナ外で上手く動かない場合、このシェルの中で動かすようにすると正常に実行できる可能性が高いです。  
+```bash
+docker compose run --rm compiler bash
+```
+ただし、Dockerのボリューム機能を利用する都合上、特に設定しない限りリポジトリ以下のファイルしか参照できないようにしているため、入力ファイルと出力ファイルはすべてリポジトリ以下のパス(例えばこのREADME.mdと同じディレクトリ)に準備するようにしてください。  
+
 ## Build and Installation
 ### Prerequisites
 このプログラムのビルドには、LLVM 20.1およびそれに対応するlibPollyが必要です。  
@@ -14,7 +30,7 @@ sudo apt install libpolly-20-dev
 gccなどいずれかのCコンパイラをインストールし、コマンド名`cc`で実行可能な状態にしてください。  
 
 ### Build from source
-`git clone`等でコピーしたリポジトリのルートで以下のコマンドを実行すると、target/releaseディレクトリ内に実行可能ファイルが生成されます。  
+リポジトリのルートで以下のコマンドを実行すると、target/releaseディレクトリ内に処理系の実行可能ファイルが生成されます。  
 ```bash
 cargo build --release
 ```
