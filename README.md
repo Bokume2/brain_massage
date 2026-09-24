@@ -62,3 +62,6 @@ bmsgc <SOURCE_FILE> -o <OUTPUT_FILE>
 
 ## Samples
 samplesディレクトリにBrainMassageのサンプルコードを置いています。  
+
+## Contact
+不具合や機能提案など作者へのご連絡は[Twitter(現X)](https://x.com/boku_renraku)やその他までお気軽にお声掛けください。  
