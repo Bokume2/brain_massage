@@ -7,3 +7,4 @@ services:
         GID: ${GID:-1000}
     volumes:
       - .:/brain_massage
+    network_mode: "host"
